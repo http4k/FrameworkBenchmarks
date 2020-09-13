@@ -1,6 +1,8 @@
+import com.fasterxml.jackson.databind.JsonNode
 import org.apache.hc.core5.http.impl.bootstrap.ServerBootstrap
 import org.apache.hc.core5.http.io.SocketConfig
 import org.http4k.core.HttpHandler
+import org.http4k.format.Jackson
 import org.http4k.server.Http4kRequestHandler
 import org.http4k.server.Http4kServer
 import org.http4k.server.ServerConfig
@@ -10,11 +12,22 @@ fun main() {
      * we need a custom config here because of how virtual hosting is required in the TFB
      * environment. Normally we would just call the inbuilt ApacheServer(9000) function
      */
-    val config = TfbApacheServer(9000)
-    Http4kBenchmarkServer(PostgresDatabase("tfb-database")).start(config)
+    val config = TfbApacheGraalServer(9000)
+    Http4kBenchmarkServer(object : Database {
+        override fun findWorld() = Jackson.obj()
+
+        override fun loadAll() = emptyMap<Int, JsonNode>()
+
+        override fun findWorlds(count: Int) = emptyList<JsonNode>()
+
+        override fun updateWorlds(count: Int) = emptyList<JsonNode>()
+
+        override fun fortunes() = emptyList<Fortune>()
+
+    }).start(config)
 }
 
-private class TfbApacheServer(val port: Int) : ServerConfig {
+private class TfbApacheGraalServer(val port: Int) : ServerConfig {
     override fun toServer(httpHandler: HttpHandler): Http4kServer = object : Http4kServer {
         val handler = Http4kRequestHandler(httpHandler)
 

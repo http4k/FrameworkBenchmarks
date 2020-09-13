@@ -31,7 +31,7 @@ object WorldRoutes {
     }
 
     fun cachedRoute(db: Database): RoutingHttpHandler {
-        val cachedDb = CachedDatabase(db)
+        val cachedDb by lazy { CachedDatabase(db) }
 
         return "/cached" bind GET to {
             Response(OK).with(jsonBody of array(cachedDb.findWorlds(numberOfQueries(it))))

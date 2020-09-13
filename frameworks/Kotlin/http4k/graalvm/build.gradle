@@ -1,0 +1,22 @@
+dependencies {
+    compile project(":core")
+    compile "org.http4k:http4k-server-apache:$http4k_version"
+    compileOnly "org.graalvm.nativeimage:svm:20.2.0"
+}
+
+apply plugin: 'application'
+mainClassName = "Http4kGraalVmServerKt"
+apply plugin: 'com.github.johnrengelman.shadow'
+
+shadowJar {
+    baseName = "http4k-$project.name-benchmark"
+    classifier = null
+    version = null
+    mergeServiceFiles()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+}
