@@ -34,10 +34,7 @@ class PostgresDatabase : Database {
         .execute()
         .map {
             it.associate {
-                it.getInteger("id") to obj(
-                    "id" to number(it.getInteger("id")),
-                    "randomnumber" to number(it.getInteger("randomnumber"))
-                )
+                it.getInteger("id") to (it.getInteger("id") to it.getInteger("randomnumber")).toJson()
             }
         }
         .toCompletionStage().toCompletableFuture().get()
@@ -67,7 +64,7 @@ class PostgresDatabase : Database {
 
     companion object {
         private fun findWorld(id: Int, pool: SqlClient) =
-            pool.preparedQuery("SELECT id, randomnumber FROM world WHERE id = $1")
+            pool.preparedQuery("SELECT id, randomNumber FROM world WHERE id = $1")
                 .execute(Tuple.of(id))
                 .map { rows ->
                     val r = rows.iterator().next()
