@@ -30,9 +30,16 @@ class PostgresDatabase : Database {
     override fun findWorld() =
         findWorld(randomWorld(), queryPool).map { it.toJson() }.toCompletionStage().toCompletableFuture().get()
 
-    override fun loadAll() = queryPool.preparedQuery("SELECT id, randomnumber FROM world WHERE id = $1")
-        .execute(Tuple.of(randomWorld()))
-        .map { it.associate { it.getInteger(0) to (it.getInteger(0) to it.getInteger(1)).toJson() } }
+    override fun loadAll() = queryPool.preparedQuery("SELECT * FROM world ")
+        .execute()
+        .map {
+            it.associate {
+                it.getInteger("id") to obj(
+                    "id" to number(it.getInteger("id")),
+                    "randomnumber" to number(it.getInteger("randomnumber"))
+                )
+            }
+        }
         .toCompletionStage().toCompletableFuture().get()
 
     override fun findWorlds(count: Int) =
