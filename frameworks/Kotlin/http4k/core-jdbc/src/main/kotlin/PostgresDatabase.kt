@@ -70,7 +70,7 @@ class PostgresDatabase private constructor(private val dataSource: DataSource) :
         prepareStatement(stmt).use(fn)
 
     private fun Connection.findWorld(id: Int) =
-        withStatement("SELECT * FROM world WHERE id = ?") {
+        withStatement("SELECT id, randomNumber FROM world WHERE id = ?") {
             setInt(1, id)
             executeQuery().toResultsList {
                 obj("id" to number(getInt("id")), "randomNumber" to number(getInt("randomNumber")))
@@ -78,7 +78,7 @@ class PostgresDatabase private constructor(private val dataSource: DataSource) :
         }
 
     private fun Connection.findAll() =
-        withStatement("SELECT * FROM world") {
+        withStatement("SELECT id, randomNumber FROM world") {
             executeQuery().toResultsList {
                 val id = getInt("id")
                 id to obj("id" to number(id), "randomNumber" to number(getInt("randomNumber")))
