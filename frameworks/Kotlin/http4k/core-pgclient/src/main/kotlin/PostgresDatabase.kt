@@ -11,7 +11,6 @@ import org.http4k.format.Argo.obj
 class PostgresDatabase : Database {
     private val queryPool: SqlClient
     private val updatePool: SqlClient
-    private val batchSize = 20
 
     init {
         val vertx = Vertx.vertx(VertxOptions().setPreferNativeTransport(true))
@@ -29,17 +28,17 @@ class PostgresDatabase : Database {
     }
 
     override fun findWorld() =
-        findWorld(randomWorld(), queryPool).map { it.toJson() }.result()
+        findWorld(randomWorld(), queryPool).map { it.toJson() }.toCompletionStage().toCompletableFuture().get()
 
     override fun loadAll() = queryPool.preparedQuery("SELECT id, randomnumber FROM world WHERE id = $1")
         .execute(Tuple.of(randomWorld()))
         .map { it.associate { it.getInteger(0) to (it.getInteger(0) to it.getInteger(1)).toJson() } }
-        .result()
+        .toCompletionStage().toCompletableFuture().get()
 
     override fun findWorlds(count: Int) =
         (1..count).map {
             findWorld(randomWorld(), queryPool)
-                .map { it.toJson() }.result()
+                .map { it.toJson() }.toCompletionStage().toCompletableFuture().get()
         }
 
     override fun updateWorlds(count: Int) =
@@ -49,14 +48,14 @@ class PostgresDatabase : Database {
                 updatePool.preparedQuery("UPDATE world SET randomnumber = $1 WHERE id = $2")
                     .execute(Tuple.of(update.first, update.second))
                     .flatMap { findWorld(update.first, queryPool).map { it.toJson() } }
-                    .result()
+                    .toCompletionStage().toCompletableFuture().get()
             }
 
     override fun fortunes() = queryPool.preparedQuery("SELECT id, message FROM fortune")
         .execute()
         .map { it.map { Fortune(it.getInteger(0), it.getString(1)) } }
         .map { (it + Fortune(0, "Additional fortune added at request time.")) }
-        .result()
+        .toCompletionStage().toCompletableFuture().get()
         .sortedBy { it.message }
 
     companion object {
