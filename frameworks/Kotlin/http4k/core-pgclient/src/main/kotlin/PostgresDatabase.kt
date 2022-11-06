@@ -64,11 +64,11 @@ class PostgresDatabase : Database {
 
     companion object {
         private fun findWorld(id: Int, pool: SqlClient) =
-            pool.preparedQuery("SELECT id, randomNumber FROM world WHERE id = $1")
+            pool.preparedQuery("SELECT id, randomnumber FROM world WHERE id = $1")
                 .execute(Tuple.of(id))
                 .map { rows ->
                     val r = rows.iterator().next()
-                    r.getInteger(0) to r.getInteger(1)
+                    r.getInteger("id") to r.getInteger("randomnumber")
                 }
     }
 }
