@@ -1,4 +1,4 @@
-FROM ruby:3.4
+FROM ruby:4.0-rc
 
 ADD ./ /rack-sequel
 
@@ -16,6 +16,7 @@ RUN bundle install --jobs=4 --gemfile=/rack-sequel/Gemfile
 
 ENV DBTYPE=mysql
 
+ENV WEB_CONCURRENCY=auto
 EXPOSE 8080
 
 CMD bundle exec puma -C config/mri_puma.rb -b tcp://0.0.0.0:8080 -e production

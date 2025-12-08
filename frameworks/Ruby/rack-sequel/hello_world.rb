@@ -15,17 +15,7 @@ class HelloWorld
   PLAINTEXT_TYPE = 'text/plain'
   DATE = 'Date'
   SERVER = 'Server'
-  SERVER_STRING = if defined?(PhusionPassenger)
-                    'Passenger'
-                  elsif defined?(Puma)
-                    'Puma'
-                  elsif defined?(Iodine)
-                    'Iodine'
-                  elsif defined?(Unicorn)
-                    'Unicorn'
-                  else
-                    'Ruby Rack'
-                  end
+  SERVER_STRING = "Rack"
 
   def bounded_queries(env)
     params = Rack::Utils.parse_query(env['QUERY_STRING'])
@@ -40,13 +30,14 @@ class HelloWorld
   end
 
   def db
-    World::BY_ID.(id: rand1)
+    World.with_pk(rand1).values
   end
 
   def queries(env)
+    ids = ALL_IDS.sample(bounded_queries(env))
     DB.synchronize do
-      ALL_IDS.sample(bounded_queries(env)).map do |id|
-        World::BY_ID.(id: id)
+      ids.map do |id|
+        World.with_pk(id).values
       end
     end
   end
@@ -79,7 +70,7 @@ class HelloWorld
       html << <<~"HTML"
       <tr>
         <td>#{fortune.id}</td>
-        <td>#{Rack::Utils.escape_html(fortune.message)}</td>
+        <td>#{ERB::Escape.html_escape(fortune.message)}</td>
       </tr>
       HTML
     end
@@ -93,16 +84,20 @@ class HelloWorld
   end
 
   def updates(env)
+    worlds = []
+    ids = ALL_IDS.sample(bounded_queries(env))
     DB.synchronize do
       worlds =
-        ALL_IDS.sample(bounded_queries(env)).map do |id|
-          world = World::BY_ID.(id: id)
-          world[:randomnumber] = rand1
+        ids.map do |id|
+          world = World.with_pk(id)
+          new_value = rand1
+          new_value = rand1 while new_value == world.randomnumber
+          world.randomnumber = new_value
           world
         end
       World.batch_update(worlds)
-      worlds
     end
+    worlds.map!(&:values)
   end
 
   def call(env)
@@ -138,15 +133,7 @@ class HelloWorld
     ]
   end
 
-  if defined?(Unicorn)
-    def headers(content_type, body)
-      {
-        CONTENT_TYPE => content_type,
-        SERVER => SERVER_STRING,
-        CONTENT_LENGTH => body.bytesize.to_s
-      }
-    end
-  elsif defined?(Puma)
+  if defined?(Puma)
     def headers(content_type, _)
       {
         CONTENT_TYPE => content_type,
